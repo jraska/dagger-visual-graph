@@ -1,8 +1,9 @@
 apply plugin: 'java'
 
-
 dependencies {
   compile 'com.github.javaparser:javaparser-core:2.4.0'
+
+  compileOnly 'org.projectlombok:lombok:1.16.8'
 
   testCompile 'junit:junit:4.12'
 }
