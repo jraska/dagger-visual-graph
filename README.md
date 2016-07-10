@@ -6,6 +6,12 @@ Simple tool to generate visual representation of Dagger graph in the application
 The implementation is now quite simple, it does not cover everything and is far away from being perfect, 
 but it does the job for me at the moment.
 
+
+## Usage
+```
+java -jar dagger-visualizer.jar path/to/sources/root
+```
+
 ## License
 
     Copyright 2016 Josef Raska
