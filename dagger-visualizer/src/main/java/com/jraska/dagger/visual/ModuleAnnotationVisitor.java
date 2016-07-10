@@ -47,14 +47,13 @@ final class ModuleAnnotationVisitor extends VoidVisitorAdapter<Object> {
   }
 
   private boolean hasProvideAnnotation(MethodDeclaration n) {
-    boolean hasProvideAnnotation = false;
     for (AnnotationExpr annotationExpr : n.getAnnotations()) {
       if ("Provides".equals(annotationExpr.getName().getName())) {
-        hasProvideAnnotation = true;
-        break;
+        return true;
       }
     }
-    return hasProvideAnnotation;
+
+    return false;
   }
 
   private boolean isDaggerModule(ClassOrInterfaceDeclaration declaration) {
@@ -64,6 +63,7 @@ final class ModuleAnnotationVisitor extends VoidVisitorAdapter<Object> {
         return true;
       }
     }
+
     return false;
   }
 }

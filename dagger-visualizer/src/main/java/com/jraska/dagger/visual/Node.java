@@ -1,5 +1,7 @@
 package com.jraska.dagger.visual;
 
+import lombok.ToString;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,5 +26,13 @@ final class Node {
 
   public Set<Node> dependencies() {
     return Collections.unmodifiableSet(dependencies);
+  }
+
+  @Override
+  public String toString() {
+    return "Node{" +
+            "name='" + name + '\'' +
+            ", dependenciesSize=" + dependencies.size() +
+            '}';
   }
 }
