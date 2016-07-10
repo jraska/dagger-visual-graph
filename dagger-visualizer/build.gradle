@@ -1,5 +1,18 @@
 apply plugin: 'java'
 
+version = '0.1.0'
+
+jar {
+  manifest {
+    attributes 'Main-Class': 'com.jraska.dagger.visual.DaggerDependenciesVisualizer'
+    attributes 'Specification-Version': version
+  }
+
+  from {
+    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+}
+
 dependencies {
   compile 'com.github.javaparser:javaparser-core:2.4.0'
 
