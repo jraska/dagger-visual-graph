@@ -21,6 +21,15 @@ final class DependencyGraph {
     return Optional.ofNullable(nodes.get(name));
   }
 
+  public Node nodeOrThrow(String name) {
+    Node node = nodes.get(name);
+    if (node == null) {
+      throw new IllegalArgumentException("Node '" + name + "' not found");
+    }
+
+    return node;
+  }
+
   public static class Builder {
     private final Map<String, Node> nodes = new HashMap<>();
 

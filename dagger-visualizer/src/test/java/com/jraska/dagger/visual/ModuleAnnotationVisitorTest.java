@@ -1,14 +1,12 @@
 package com.jraska.dagger.visual;
 
-import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
-import com.github.javaparser.ast.CompilationUnit;
 import lombok.SneakyThrows;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.util.Optional;
 
+import static com.jraska.dagger.visual.InjectAnnotationVisitorTest.visitSrc;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ModuleAnnotationVisitorTest {
@@ -37,6 +35,24 @@ public class ModuleAnnotationVisitorTest {
           MODULE_SRC +
           "  }";
 
+  static final String MODULE_INTO_SET_SRC = "@Module\n" +
+          "class IntoSetModule{\n" +
+          "  @Provides @IntoSet\n" +
+          "  File provideFile(String name){\n" +
+          "    return new File(name);\n" +
+          "  }\n" +
+          "  @Provides\n" +
+          "  @IntoSet\n" +
+          "  File provideSecondFileFile(Object name){\n" +
+          "    return new File(name.toString);\n" +
+          "  }\n" +
+          "\n" +
+          "  @Provides\n" +
+          "  OkHttpClient provideClient(Set<File> values){\n" +
+          "    return create(values);\n" +
+          "  }\n" +
+          "}";
+
 
   @Test
   public void whenVisitsModule_thenFindsAnnotatedMethod() throws ParseException {
@@ -48,28 +64,36 @@ public class ModuleAnnotationVisitorTest {
     processTestModule(NESTED_MODULE_SRC);
   }
 
+  @Test
+  public void whenIntoSetProivde_thenDependencyAsSet() {
+    DependencyGraph.Builder graphBuilder = DependencyGraph.builder();
+    ModuleAnnotationVisitor annotationVisitor = ModuleAnnotationVisitor.create(graphBuilder);
+
+    visitSrc(MODULE_INTO_SET_SRC, annotationVisitor);
+
+    DependencyGraph graph = graphBuilder.build();
+    assertThat(graph.nodes()).hasSize(4);
+    assertThat(graph.nodeOrThrow("Set<File>").dependencies())
+            .containsExactlyInAnyOrder(graph.nodeOrThrow("Object"), graph.nodeOrThrow("String"));
+    assertThat(graph.nodeOrThrow("OkHttpClient").dependencies())
+            .containsExactly(graph.nodeOrThrow("Set<File>"));
+  }
+
   @SneakyThrows
   static void processTestModule(String src) {
     DependencyGraph.Builder graphBuilder = DependencyGraph.builder();
     ModuleAnnotationVisitor annotationVisitor = ModuleAnnotationVisitor.create(graphBuilder);
 
-    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(src.getBytes());
-    CompilationUnit compilationUnit = JavaParser.parse(byteArrayInputStream);
-
-    annotationVisitor.visit(compilationUnit, null);
+    visitSrc(src, annotationVisitor);
 
     DependencyGraph graph = graphBuilder.build();
     assertTestGraph(graph);
   }
 
-  @SuppressWarnings("OptionalGetWithoutIsPresent")
   private static void assertTestGraph(DependencyGraph graph) {
-    Optional<Node> fileNode = graph.node("File");
-    assertThat(fileNode).isPresent();
-
-    Optional<Node> stringNode = graph.node("String");
-    assertThat(stringNode).isPresent();
-    assertThat(fileNode.get().dependencies()).containsExactly(stringNode.get());
-    assertThat(stringNode.get().dependencies()).isEmpty();
+    Node fileNode = graph.nodeOrThrow("File");
+    Node stringNode = graph.nodeOrThrow("String");
+    assertThat(fileNode.dependencies()).containsExactly(stringNode);
+    assertThat(stringNode.dependencies()).isEmpty();
   }
 }

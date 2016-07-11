@@ -1,13 +1,14 @@
 package com.jraska.dagger.visual;
 
+import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
-import java.util.List;
 import java.util.Stack;
+
+import static com.jraska.dagger.visual.InjectAnnotationVisitor.hasAnnotation;
 
 final class ModuleAnnotationVisitor extends VoidVisitorAdapter<Object> {
   private final Stack<Boolean> isInModuleStack = new Stack<>();
@@ -30,40 +31,34 @@ final class ModuleAnnotationVisitor extends VoidVisitorAdapter<Object> {
   }
 
   @Override
-  public void visit(MethodDeclaration n, Object arg) {
+  public void visit(MethodDeclaration method, Object arg) {
     if (isInModuleStack.isEmpty() || !isInModuleStack.peek()) {
       return;
     }
 
-    if (!hasProvideAnnotation(n)) {
+    if (!hasProvideAnnotation(method)) {
       return;
     }
 
-    String type = n.getType().toString();
+    String type = method.getType().toString();
+    if (hasIntoSetAnnotation(method)) {
+      type = "Set<" + type + ">";
+    }
 
-    for (Parameter parameter : n.getParameters()) {
+    for (Parameter parameter : method.getParameters()) {
       builder.addDependency(type, parameter.getType().toString());
     }
   }
 
-  private boolean hasProvideAnnotation(MethodDeclaration n) {
-    for (AnnotationExpr annotationExpr : n.getAnnotations()) {
-      if ("Provides".equals(annotationExpr.getName().getName())) {
-        return true;
-      }
-    }
-
-    return false;
+  private boolean hasProvideAnnotation(BodyDeclaration declaration) {
+    return hasAnnotation(declaration, "Provides");
   }
 
-  private boolean isDaggerModule(ClassOrInterfaceDeclaration declaration) {
-    List<AnnotationExpr> annotations = declaration.getAnnotations();
-    for (AnnotationExpr annotation : annotations) {
-      if ("Module".equals(annotation.getName().getName())) {
-        return true;
-      }
-    }
+  static boolean isDaggerModule(ClassOrInterfaceDeclaration declaration) {
+    return hasAnnotation(declaration, "Module");
+  }
 
-    return false;
+  static boolean hasIntoSetAnnotation(BodyDeclaration declaration) {
+    return hasAnnotation(declaration, "IntoSet");
   }
 }

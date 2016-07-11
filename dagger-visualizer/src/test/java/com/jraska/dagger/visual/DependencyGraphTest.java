@@ -3,9 +3,6 @@ package com.jraska.dagger.visual;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,13 +36,10 @@ public class DependencyGraphTest {
   }
 
   @SuppressWarnings("OptionalGetWithoutIsPresent") // assertions
-  static void assertSingleDependency(DependencyGraph dependencyGraph, String from, String to){
-    Optional<Node> fromNode = dependencyGraph.node(from);
-    assertThat(fromNode).isPresent();
+  static void assertSingleDependency(DependencyGraph dependencyGraph, String from, String to) {
+    Node fromNode = dependencyGraph.nodeOrThrow(from);
+    Node toNode = dependencyGraph.nodeOrThrow(to);
 
-    Optional<Node> toNode = dependencyGraph.node(to);
-    assertThat(toNode).isPresent();
-
-    assertThat(fromNode.get().dependencies()).containsExactly(toNode.get());
+    assertThat(fromNode.dependencies()).containsExactly(toNode);
   }
 }

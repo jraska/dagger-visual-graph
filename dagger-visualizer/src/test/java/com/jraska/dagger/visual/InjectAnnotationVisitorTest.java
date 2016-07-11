@@ -2,11 +2,11 @@ package com.jraska.dagger.visual;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.visitor.VoidVisitor;
 import lombok.SneakyThrows;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -71,30 +71,29 @@ public class InjectAnnotationVisitorTest {
     processTestInjected(NESTED_CONSTRUCTOR_INJECT_SRC);
   }
 
-  @SneakyThrows
-  private void processTestInjected(String src) {
+  private static void processTestInjected(String src) {
     DependencyGraph.Builder graphBuilder = DependencyGraph.builder();
     InjectAnnotationVisitor annotationVisitor = InjectAnnotationVisitor.create(graphBuilder);
 
-    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(src.getBytes());
-    CompilationUnit compilationUnit = JavaParser.parse(byteArrayInputStream);
-
-    annotationVisitor.visit(compilationUnit, null);
+    visitSrc(src, annotationVisitor);
 
     DependencyGraph graph = graphBuilder.build();
     assertTestGraph(graph);
   }
 
-  @SuppressWarnings("OptionalGetWithoutIsPresent")
-  private static void assertTestGraph(DependencyGraph graph) {
-    Optional<Node> injectNode = graph.node("Injected");
-    assertThat(injectNode).isPresent();
+  @SneakyThrows
+  static void visitSrc(String src, VoidVisitor<?> annotationVisitor) {
+    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(src.getBytes());
+    CompilationUnit compilationUnit = JavaParser.parse(byteArrayInputStream);
 
-    Optional<Node> stringNode = graph.node("String");
-    assertThat(stringNode).isPresent();
-    Optional<Node> fileNode = graph.node("File");
-    assertThat(fileNode).isPresent();
-    assertThat(injectNode.get().dependencies()).containsExactlyInAnyOrder(stringNode.get(), fileNode.get());
+    annotationVisitor.visit(compilationUnit, null);
+  }
+
+  private static void assertTestGraph(DependencyGraph graph) {
+    Node injectNode = graph.nodeOrThrow("Injected");
+    Node stringNode = graph.nodeOrThrow("String");
+    Node fileNode = graph.nodeOrThrow("File");
+    assertThat(injectNode.dependencies()).containsExactlyInAnyOrder(stringNode, fileNode);
   }
 }
 
